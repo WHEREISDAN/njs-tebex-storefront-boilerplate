@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 24, 26, 32;
+  --background-end-rgb: 18, 20, 25;
+  --primary-blue: 77, 172, 255;
+  --secondary-blue: 48, 117, 190;
+  --dark-gray: 32, 34, 40;
+  --light-gray: 48, 50, 57;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
+}
+
+@layer components {
+  .game-card {
+    @apply bg-gray-800 rounded-lg overflow-hidden border border-gray-700 transition-all duration-300 hover:shadow-[0_0_15px_rgba(77,172,255,0.4)] hover:border-blue-500;
+  }
+  
+  .game-button-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 hover:shadow-[0_0_10px_rgba(77,172,255,0.6)];
+  }
+  
+  .game-button-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 border border-gray-600 hover:border-gray-500;
+  }
+  
+  .game-input {
+    @apply bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+  
+  .game-heading {
+    @apply font-bold text-white relative;
+  }
+  
+  .game-heading::after {
+    @apply content-[''] absolute left-0 bottom-[-0.5rem] w-16 h-1 bg-blue-500 rounded-full;
+  }
+  
+  .navbar-link {
+    @apply text-gray-300 hover:text-blue-400 transition-colors duration-200 relative px-3 py-2;
+  }
+  
+  .navbar-link::after {
+    @apply content-[''] absolute left-0 bottom-0 w-0 h-0.5 bg-blue-500 transition-all duration-300;
+  }
+  
+  .navbar-link:hover::after {
+    @apply w-full;
+  }
+  
+  .navbar-link.active {
+    @apply text-blue-400;
+  }
+  
+  .navbar-link.active::after {
+    @apply w-full;
+  }
+}
