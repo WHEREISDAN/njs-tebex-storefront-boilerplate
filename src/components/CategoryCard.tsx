@@ -12,7 +12,7 @@ type CategoryProps = {
 export default function CategoryCard({ id, name, description, image, packageCount = 0 }: CategoryProps) {
   return (
     <Link href={`/categories/${id}`} className="block">
-      <div className="game-card group h-full">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/10 transition-all h-full group">
         <div className="relative h-40 w-full bg-gray-900">
           {image ? (
             <Image 
@@ -35,7 +35,7 @@ export default function CategoryCard({ id, name, description, image, packageCoun
           <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">{name}</h3>
           <p className="text-gray-400 mb-3 line-clamp-2 text-sm">{description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-500">
+            <span className="text-sm font-medium text-blue-400">
               {packageCount} {packageCount === 1 ? "item" : "items"}
             </span>
             <div className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">

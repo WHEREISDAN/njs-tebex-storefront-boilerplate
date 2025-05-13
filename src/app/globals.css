@@ -2,12 +2,12 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 24, 26, 32;
-  --background-end-rgb: 18, 20, 25;
-  --primary-blue: 77, 172, 255;
-  --secondary-blue: 48, 117, 190;
-  --dark-gray: 32, 34, 40;
-  --light-gray: 48, 50, 57;
+  --background-start-rgb: 17, 24, 39; /* darker gray */
+  --background-end-rgb: 13, 17, 28; /* even darker gray */
+  --primary-blue: 96, 165, 250; /* lighter blue */
+  --secondary-blue: 59, 130, 246;
+  --dark-gray: 31, 41, 55;
+  --light-gray: 55, 65, 81;
 }
 
 body {
@@ -22,19 +22,19 @@ body {
 
 @layer components {
   .game-card {
-    @apply bg-gray-800 rounded-lg overflow-hidden border border-gray-700 transition-all duration-300 hover:shadow-[0_0_15px_rgba(77,172,255,0.4)] hover:border-blue-500;
+    @apply bg-gray-800 rounded-lg overflow-hidden border border-gray-700 transition-all duration-300 hover:shadow-[0_0_15px_rgba(96,165,250,0.2)] hover:border-blue-400;
   }
   
   .game-button-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 hover:shadow-[0_0_10px_rgba(77,172,255,0.6)];
+    @apply bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-lg hover:shadow-blue-500/20;
   }
   
   .game-button-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 border border-gray-600 hover:border-gray-500;
+    @apply bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors border border-gray-700 hover:border-gray-600 shadow-lg;
   }
   
   .game-input {
-    @apply bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent;
   }
   
   .game-heading {
@@ -42,7 +42,7 @@ body {
   }
   
   .game-heading::after {
-    @apply content-[''] absolute left-0 bottom-[-0.5rem] w-16 h-1 bg-blue-500 rounded-full;
+    @apply content-[''] absolute left-0 bottom-[-0.5rem] w-12 h-1 bg-blue-400 rounded-full;
   }
   
   .navbar-link {
@@ -50,7 +50,7 @@ body {
   }
   
   .navbar-link::after {
-    @apply content-[''] absolute left-0 bottom-0 w-0 h-0.5 bg-blue-500 transition-all duration-300;
+    @apply content-[''] absolute left-0 bottom-0 w-0 h-0.5 bg-blue-400 transition-all duration-300;
   }
   
   .navbar-link:hover::after {

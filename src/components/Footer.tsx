@@ -6,7 +6,7 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold mb-4 text-white">
               <span className="text-white">WHERE</span>
-              <span className="text-blue-500">IS</span>
+              <span className="text-blue-400">IS</span>
               <span className="text-white">DAN</span>
             </h3>
             <p className="text-gray-400">
@@ -71,8 +71,8 @@ export default function Footer() {
             <h3 className="text-lg font-bold mb-4 text-white">Newsletter</h3>
             <p className="text-gray-400 mb-4">Subscribe to get updates on new releases and special offers.</p>
             <div className="flex">
-              <input type="email" placeholder="Your email" className="bg-gray-800 border border-gray-700 text-white rounded-l-md px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-blue-500" />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-r-md transition-colors">
+              <input type="email" placeholder="Your email" className="bg-gray-800 border border-gray-700 text-white rounded-l-md px-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-blue-400" />
+              <button className="bg-blue-500 hover:bg-blue-400 text-white px-4 rounded-r-md transition-colors">
                 Subscribe
               </button>
             </div>

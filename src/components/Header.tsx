@@ -21,7 +21,7 @@ export default function Header() {
         <Link href="/" className="flex items-center">
           <h1 className="text-2xl font-bold">
             <span className="text-white">WHERE</span>
-            <span className="text-blue-500">IS</span>
+            <span className="text-blue-400">IS</span>
             <span className="text-white">DAN</span>
           </h1>
         </Link>
@@ -49,7 +49,7 @@ export default function Header() {
         
         <Link 
           href="/basket" 
-          className="flex items-center bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-all duration-200 border border-gray-700 hover:border-blue-500"
+          className="flex items-center bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors border border-gray-700 hover:border-blue-400"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400">
             <circle cx="9" cy="21" r="1"></circle>

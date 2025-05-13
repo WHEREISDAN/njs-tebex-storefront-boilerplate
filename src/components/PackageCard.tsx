@@ -52,7 +52,7 @@ export default function PackageCard({ id, name, description, price, image, curre
   };
   
   return (
-    <div className="game-card group h-full flex flex-col">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:shadow-lg hover:shadow-blue-500/10 transition-all h-full group flex flex-col">
       <Link href={`/packages/${id}`} className="block relative">
         <div className="relative h-52 w-full overflow-hidden">
           {image ? (
@@ -63,14 +63,14 @@ export default function PackageCard({ id, name, description, price, image, curre
               className="object-cover transform group-hover:scale-110 transition-transform duration-300 opacity-80 group-hover:opacity-100"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-gray-800">
+            <div className="flex items-center justify-center h-full bg-gray-900">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-600">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
               </svg>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-90"></div>
-          <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold rounded-full px-3 py-1">
+          <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-bold rounded-full px-3 py-1">
             ${price.toFixed(2)} {currency}
           </div>
         </div>
@@ -84,14 +84,14 @@ export default function PackageCard({ id, name, description, price, image, curre
         <p className="text-gray-400 mb-4 text-sm line-clamp-2 flex-grow">{description}</p>
         
         <div className="flex items-center justify-between mt-2">
-          <span className="text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold text-blue-400">
             ${price.toFixed(2)} {currency}
           </span>
           
           <button
             onClick={handleAddToBasket}
             disabled={isAdding}
-            className="game-button-primary text-sm"
+            className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg transition-colors disabled:bg-blue-800 disabled:cursor-not-allowed"
           >
             {isAdding ? "Processing..." : "Add to Cart"}
           </button>
