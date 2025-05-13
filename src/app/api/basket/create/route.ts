@@ -1,19 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { URL } from 'url';
 
 // Server environment variables
 const TEBEX_BASE_URL = "https://headless.tebex.io/api";
 const PUBLIC_TOKEN = process.env.NEXT_PUBLIC_TEBEX_PUBLIC_TOKEN;
 const PRIVATE_TOKEN = process.env.TEBEX_PRIVATE_TOKEN?.trim();
 
+// List of allowed domains for redirect URLs
+const ALLOWED_DOMAINS = [
+  'localhost',
+  '127.0.0.1',
+  'yourproductiondomain.com', // Replace with your actual domain
+];
+
+// Function to validate a URL
+function isValidUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    const hostname = url.hostname;
+    return ALLOWED_DOMAINS.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+  } catch (error) {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Parse request body
     const { completeUrl, cancelUrl } = await req.json();
     
+    // Validate URLs
     if (!completeUrl || !cancelUrl) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
+      );
+    }
+    
+    // Verify URLs point to allowed domains
+    if (!isValidUrl(completeUrl) || !isValidUrl(cancelUrl)) {
+      return NextResponse.json(
+        { error: 'Invalid URL provided. Complete and cancel URLs must point to allowed domains.' },
+        { status: 403 }
       );
     }
     
@@ -29,7 +57,7 @@ export async function POST(req: NextRequest) {
       complete_url: completeUrl,
       cancel_url: cancelUrl,
       complete_auto_redirect: true,
-      custom: ["Server-side basket creation"],
+      custom: ["Server-side basket creation"]
     };
     
     console.log('[Server] Creating basket with:', { 
@@ -54,7 +82,7 @@ export async function POST(req: NextRequest) {
       const errorText = await response.text();
       console.error('[Server] Tebex API error:', response.status, errorText);
       return NextResponse.json(
-        { error: `Tebex API error: ${response.status}`, details: errorText },
+        { error: `Tebex API error: ${response.status}` },
         { status: response.status }
       );
     }
@@ -63,23 +91,20 @@ export async function POST(req: NextRequest) {
     const responseData = await response.json();
     console.log('[Server] Basket creation response data:', responseData);
     
-    // Extract the basket ident from the response
-    if (!responseData.data || !responseData.data.ident) {
-      console.error('[Server] Invalid response format from Tebex API:', responseData);
+    if (responseData.data && responseData.data.ident) {
+      // Extract the basket ident from the response
+      const basketIdent = responseData.data.ident;
+      console.log('[Server] Basket created successfully with ident:', basketIdent);
+      return NextResponse.json({ ident: basketIdent });
+    } else {
       return NextResponse.json(
-        { error: 'Invalid response format from Tebex API' },
+        { error: 'Invalid basket response: Missing ident in data object' },
         { status: 500 }
       );
     }
     
-    // Return the basket ident in a consistent format
-    const basketIdent = responseData.data.ident;
-    console.log('[Server] Basket created successfully with ident:', basketIdent);
-    
-    return NextResponse.json({ ident: basketIdent });
-    
   } catch (error) {
-    console.error('[Server] Basket creation error:', error);
+    console.error('[Server] Error creating basket:', error);
     return NextResponse.json(
       { error: 'Server error creating basket' },
       { status: 500 }

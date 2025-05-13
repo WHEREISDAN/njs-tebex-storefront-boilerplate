@@ -1,6 +1,56 @@
 const TEBEX_BASE_URL = "https://headless.tebex.io/api";
 const PUBLIC_TOKEN = process.env.NEXT_PUBLIC_TEBEX_PUBLIC_TOKEN;
-const PRIVATE_TOKEN = process.env.TEBEX_PRIVATE_TOKEN?.trim();
+
+// Get the CSRF token from cookies
+function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const cookies = document.cookie.split(';');
+  const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrf_token='));
+  if (!csrfCookie) return null;
+  return csrfCookie.split('=')[1];
+}
+
+// Store CSRF token in memory cache
+let cachedCsrfToken: string | null = null;
+
+// Function to add CSRF token to headers for state-changing operations
+function addCsrfToken(headers: HeadersInit): HeadersInit {
+  // Try from memory cache first, then cookie
+  const csrfToken = cachedCsrfToken || getCsrfToken();
+  if (csrfToken) {
+    return {
+      ...headers,
+      'X-CSRF-Token': csrfToken,
+    };
+  }
+  return headers;
+}
+
+// Function to ensure we have a CSRF token before making a request
+async function ensureCsrfToken(): Promise<void> {
+  // Only fetch a new token if we don't have one cached or in cookies
+  if (!cachedCsrfToken && !getCsrfToken()) {
+    try {
+      const res = await fetch('/api/basket/csrf');
+      if (!res.ok) {
+        console.error('Failed to fetch CSRF token', res.status);
+        return;
+      }
+      
+      const data = await res.json();
+      if (data && data.token) {
+        // Store token in memory cache
+        cachedCsrfToken = data.token;
+        console.log('CSRF token fetched and cached');
+      }
+      
+      // Give browser time to process cookie
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error('Error fetching CSRF token:', error);
+    }
+  }
+}
 
 // Store information 
 export async function getStoreInfo() {
@@ -52,7 +102,7 @@ export async function getCategories(includePackages = false) {
 
 export async function getCategoryById(categoryId: string, includePackages = true) {
   try {
-    const url = includePackages 
+    const url = includePackages
       ? `${TEBEX_BASE_URL}/accounts/${PUBLIC_TOKEN}/categories/${categoryId}?includePackages=1`
       : `${TEBEX_BASE_URL}/accounts/${PUBLIC_TOKEN}/categories/${categoryId}`;
     
@@ -123,28 +173,20 @@ export async function createBasket(completeUrl: string, cancelUrl: string) {
   try {
     console.log('Creating basket with URLs:', { completeUrl, cancelUrl });
     
-    const requestBody = {
-      complete_url: completeUrl,
-      cancel_url: cancelUrl,
-      complete_auto_redirect: true,
-      custom: ["Client-side basket creation"]
-    };
+    // Ensure we have a CSRF token
+    await ensureCsrfToken();
     
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
-    
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
-    }
-    
-    const res = await fetch(`${TEBEX_BASE_URL}/accounts/${PUBLIC_TOKEN}/baskets`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(requestBody),
-      cache: "no-store",
+    // Use server-side API route instead of direct Tebex API call
+    const res = await fetch('/api/basket/create', {
+      method: 'POST',
+      headers: addCsrfToken({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ 
+        completeUrl, 
+        cancelUrl 
+      }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -152,15 +194,7 @@ export async function createBasket(completeUrl: string, cancelUrl: string) {
       throw new Error(`Failed to create basket: ${res.status} ${errorText}`);
     }
     
-    const response = await res.json();
-    console.log('Basket creation response:', response);
-    
-    // Handle the nested response structure
-    if (response.data && response.data.ident) {
-      return { ident: response.data.ident };
-    }
-    
-    throw new Error('Invalid basket response: Missing ident in data object');
+    return res.json();
   } catch (error) {
     console.error('Error creating basket:', error);
     throw error;
@@ -169,18 +203,9 @@ export async function createBasket(completeUrl: string, cancelUrl: string) {
 
 export async function getBasket(basketIdent: string) {
   try {
-    const headers: HeadersInit = {
-      "Accept": "application/json",
-    };
-    
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
-    }
-    
-    const res = await fetch(`${TEBEX_BASE_URL}/accounts/${PUBLIC_TOKEN}/baskets/${basketIdent}`, {
-      headers,
-      cache: "no-store" // Don't cache basket data
+    // Use server-side API route instead of direct Tebex API call
+    const res = await fetch(`/api/basket/${basketIdent}`, {
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -203,66 +228,25 @@ export async function getBasket(basketIdent: string) {
 
 export async function addToBasket(basketIdent: string, packageId: string, quantity: number = 1) {
   try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
+    // Ensure we have a CSRF token
+    await ensureCsrfToken();
     
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
-    }
-    
-    const res = await fetch(`${TEBEX_BASE_URL}/baskets/${basketIdent}/packages`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        package_id: packageId,
-        quantity: quantity,
+    // Use server-side API route instead of direct Tebex API call
+    const res = await fetch(`/api/basket/${basketIdent}/add`, {
+      method: 'POST',
+      headers: addCsrfToken({
+        'Content-Type': 'application/json',
       }),
-      cache: "no-store",
+      body: JSON.stringify({ 
+        packageId, 
+        quantity 
+      }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {
-      /*
-       * Tebex returns a HTTP 400 with a JSON payload when the package already exists
-       * in the basket. Instead of treating this as a fatal error, fetch the basket,
-       * determine the current quantity of the item, and update it with the desired
-       * increment. This ensures the user can seamlessly increase quantities without
-       * running into front-end errors.
-       */
-      if (res.status === 400) {
-        try {
-          const errorJson = await res.json();
-          const duplicateMsg = errorJson?.detail ?? "";
-
-          if (typeof duplicateMsg === "string" && duplicateMsg.toLowerCase().includes("already in your basket")) {
-            // Fetch the current basket to determine existing quantity
-            const currentBasket = await getBasket(basketIdent);
-
-            // Locate the existing package entry in the basket
-            const existingItem = Array.isArray(currentBasket.packages)
-              ? currentBasket.packages.find((p: any) => (p.package?.id || p.id) === packageId)
-              : undefined;
-
-            const existingQty = existingItem?.qty || existingItem?.quantity || 0;
-            const newQty = existingQty + quantity;
-
-            // Perform a quantity update instead of an add
-            await updateBasketItem(basketIdent, packageId, newQty);
-
-            // Return a shape similar to add success for consistency
-            return { success: true, quantity: newQty };
-          }
-        } catch (innerErr) {
-          // Fall through to generic error handling below if anything goes wrong
-          console.error("Error handling duplicate-package scenario:", innerErr);
-        }
-      }
-
-      // Generic error handling for everything else
       const errorText = await res.text();
-      throw new Error(`Failed to add to basket: ${res.status} ${errorText}`);
+      throw new Error(`Failed to add package to basket: ${res.status} ${errorText}`);
     }
     
     return res.json();
@@ -274,22 +258,20 @@ export async function addToBasket(basketIdent: string, packageId: string, quanti
 
 export async function updateBasketItem(basketIdent: string, packageId: string, quantity: number) {
   try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
+    // Ensure we have a CSRF token
+    await ensureCsrfToken();
     
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
-    }
-    
-    const res = await fetch(`${TEBEX_BASE_URL}/baskets/${basketIdent}/packages/${packageId}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        quantity: quantity,
+    // Use server-side API route instead of direct Tebex API call
+    const res = await fetch(`/api/basket/${basketIdent}/update`, {
+      method: 'PUT',
+      headers: addCsrfToken({
+        'Content-Type': 'application/json',
       }),
-      cache: "no-store",
+      body: JSON.stringify({ 
+        packageId, 
+        quantity 
+      }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -297,8 +279,7 @@ export async function updateBasketItem(basketIdent: string, packageId: string, q
       throw new Error(`Failed to update basket item quantity: ${res.status} ${errorText}`);
     }
     
-    // This endpoint returns no content on success
-    return { success: true };
+    return res.json();
   } catch (error) {
     console.error('Error updating basket item:', error);
     throw error;
@@ -307,23 +288,19 @@ export async function updateBasketItem(basketIdent: string, packageId: string, q
 
 export async function removeFromBasket(basketIdent: string, packageId: string) {
   try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    };
+    // Ensure we have a CSRF token
+    await ensureCsrfToken();
     
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
-    }
-    
-    const res = await fetch(`${TEBEX_BASE_URL}/baskets/${basketIdent}/packages/remove`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        package_id: packageId,
+    // Use server-side API route instead of direct Tebex API call
+    const res = await fetch(`/api/basket/${basketIdent}/remove`, {
+      method: 'POST',
+      headers: addCsrfToken({
+        'Content-Type': 'application/json',
       }),
-      cache: "no-store",
+      body: JSON.stringify({ 
+        packageId 
+      }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -331,7 +308,6 @@ export async function removeFromBasket(basketIdent: string, packageId: string) {
       throw new Error(`Failed to remove item from basket: ${res.status} ${errorText}`);
     }
     
-    // This endpoint returns the full basket object after removal
     return res.json();
   } catch (error) {
     console.error('Error removing item from basket:', error);
@@ -341,19 +317,18 @@ export async function removeFromBasket(basketIdent: string, packageId: string) {
 
 export async function getBasketAuthUrl(basketIdent: string, returnUrl: string) {
   try {
-    const headers: HeadersInit = {
-      "Accept": "application/json",
-    };
-    
-    // Add the private token header if available
-    if (PRIVATE_TOKEN) {
-      headers["X-Tebex-Secret"] = PRIVATE_TOKEN;
+    // Validate returnUrl on client side before sending to server
+    if (!returnUrl.startsWith('http://localhost:') && 
+        !returnUrl.startsWith('https://localhost:') && 
+        !returnUrl.startsWith('http://127.0.0.1:') &&
+        !returnUrl.startsWith(window.location.origin)) {
+      throw new Error('Invalid return URL. Must be a URL from the same origin.');
     }
     
+    // Use server-side API route instead of direct Tebex API call
     const encodedReturnUrl = encodeURIComponent(returnUrl);
-    const res = await fetch(`${TEBEX_BASE_URL}/accounts/${PUBLIC_TOKEN}/baskets/${basketIdent}/auth?returnUrl=${encodedReturnUrl}`, {
-      headers,
-      cache: "no-store",
+    const res = await fetch(`/api/basket/${basketIdent}/auth?returnUrl=${encodedReturnUrl}`, {
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -361,21 +336,7 @@ export async function getBasketAuthUrl(basketIdent: string, returnUrl: string) {
       throw new Error(`Failed to get basket auth URL: ${res.status} ${errorText}`);
     }
     
-    // The auth endpoint returns an array of auth providers with their URL
-    const authProviders = await res.json();
-    
-    // If there are auth providers, return the first one's URL
-    if (Array.isArray(authProviders) && authProviders.length > 0) {
-      return { auth_url: authProviders[0].url };
-    }
-    
-    // If no auth providers, we can use the checkout URL from the basket
-    const basketData = await getBasket(basketIdent);
-    if (basketData.links && basketData.links.checkout) {
-      return { auth_url: basketData.links.checkout };
-    }
-    
-    throw new Error('No authentication URL available for this basket');
+    return res.json();
   } catch (error) {
     console.error('Error getting basket auth URL:', error);
     throw error;
